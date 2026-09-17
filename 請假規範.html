@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2026 請假規範中心</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;background:#f5f7fb;color:#18212f}
+header{background:linear-gradient(135deg,#234e70,#367c9b);color:#fff;padding:28px 18px 34px}
+.wrap{max-width:1000px;margin:auto}.badge{display:inline-block;background:#ffffff22;border:1px solid #ffffff55;border-radius:999px;padding:5px 10px;font-size:13px}
+h1{margin:12px 0 6px;font-size:30px}header p{margin:0;opacity:.9}
+.search{margin:-18px auto 20px;background:white;padding:12px;border-radius:16px;box-shadow:0 8px 25px #1c334a18;display:flex;gap:8px}
+.search input{flex:1;border:0;outline:0;font-size:16px;padding:10px}
+.search button{border:0;background:#234e70;color:#fff;border-radius:10px;padding:10px 18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px}
+.card{background:#fff;border:1px solid #e5eaf0;border-radius:14px;padding:16px;cursor:pointer;transition:.15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 6px 18px #1c334a12}.icon{font-size:24px}.card b{display:block;margin-top:7px}
+.panel{background:#fff;border-radius:16px;padding:20px;margin-top:18px;border:1px solid #e5eaf0}
+.panel h2{margin-top:0}.tag{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef6fa;margin:3px;font-size:13px}
+.answer{border-left:4px solid #367c9b;background:#f4fafc;padding:13px;margin:10px 0;border-radius:8px}
+.warn{border-left-color:#d18b00;background:#fff9ed}.ok{border-left-color:#2f8f5b;background:#f1fbf5}
+.hidden{display:none}footer{color:#687384;font-size:13px;padding:28px 0 45px}
+button.small{background:#eef3f7;color:#234e70;border:0;border-radius:9px;padding:8px 10px;cursor:pointer}
+ul{padding-left:20px;line-height:1.8}
+@media(max-width:600px){h1{font-size:25px}.search{margin-left:10px;margin-right:10px}.wrap{padding:0 12px}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<span class="badge">2026 台灣勞動法規｜門市管理版</span>
+<h1>📋 請假規範中心</h1>
+<p>快速查詢「能不能請、要不要證明、店長怎麼處理」</p>
+</div></header>
+
+<main class="wrap">
+<div class="search">
+<input id="q" placeholder="例如：臨時病假、安胎需要證明、特休提前幾天？" onkeydown="if(event.key==='Enter')search()">
+<button onclick="search()">搜尋</button>
+</div>
+
+<section id="home">
+<h2>常用假別</h2>
+<div class="grid" id="cards"></div>
+<div class="panel">
+<h2>🔥 店長常見情境</h2>
+<div id="scenarios"></div>
+</div>
+</section>
+
+<section id="result" class="panel hidden"></section>
+
+<footer>
+<p>⚠️ 本網站為內部查詢工具 Prototype，不取代勞動部正式法規、主管機關函釋或個案法律意見。實際處理應以最新法令為準。</p>
+</footer>
+</main>
+
+<script>
+const leaves=[
+{name:"特別休假",icon:"🏖️",tags:["特休","排休","提前"],employee:"特休原則上由勞工排定。公司可為排班需要建議提前申請，但不宜把固定提前天數當成否定特休權利的條件。",manager:"收到特休申請後，先確認剩餘天數及排班影響；如確有急迫營運需求，應與員工協商調整，而非直接以公司規定全面禁止。",proof:"通常不需醫療證明。",source:"勞動基準法第38條"},
+{name:"普通傷病假",icon:"🤒",tags:["病假","臨時","診斷證明","收據"],employee:"急病或緊急事故可先通知公司，再補辦請假程序。公司可以要求合理的就醫證明。",manager:"不要因員工臨時請病假就直接認定曠職。先確認通知情形、實際就醫及證明；若證明不足，可通知員工在合理期限內補件。",proof:"可依個案接受診斷證明、就醫收據、處方箋或其他足以證明就醫的資料。",source:"勞工請假規則第4、10條；勞動部病假相關規定"},
+{name:"事假",icon:"📝",tags:["事假","家庭照顧"],employee:"因有事故必須親自處理者可申請事假。家庭照顧事由另有家庭照顧假規定。",manager:"確認事由及請假程序即可。事假原則上無薪，並依年度法定上限管理。",proof:"雇主得依規定要求相關證明。",source:"勞工請假規則"},
+{name:"婚假",icon:"💍",tags:["結婚"],employee:"法定婚假8日，工資照給；實際請假期間依相關規定及公司程序辦理。",manager:"核對婚姻事實及請假期間即可，不宜任意縮減法定日數。",proof:"可依公司程序要求婚姻相關證明。",source:"勞工請假規則"},
+{name:"喪假",icon:"🕊️",tags:["喪假","親屬"],employee:"依親屬關係有3、6、8日等不同日數，工資照給。緊急狀況可先通知後補辦。",manager:"應以實際喪親情況處理，不宜要求員工事前數日申請。",proof:"可依規定要求相關證明。",source:"勞工請假規則"},
+{name:"安胎休養",icon:"🤰",tags:["安胎","懷孕","診斷證明"],employee:"經醫師診斷需要安胎休養者，可依醫療需求請假。突發狀況可先通知，之後補辦程序。",manager:"重點是確認是否有醫師診斷需要安胎休養。不能因門市缺人而拒絕合法安胎休養，也不宜設定『一定提前3天』作為請假成立條件。",proof:"應有醫師診斷或其他足以證明需要安胎休養的醫療文件；若證明未載明期間，可請員工補充醫療資訊。",source:"性別平等工作法第15條；勞工請假規則第4條"},
+{name:"產假",icon:"👶",tags:["產假","生產"],employee:"目前法定產假原則為8週；不同妊娠週數的流產情形另有不同假期。",manager:"依法核給，不得因人力調度而拒絕。",proof:"依公司程序及相關規定提供必要資料。",source:"性別平等工作法第15條；勞動基準法第50條"},
+{name:"產檢假",icon:"🩺",tags:["產檢"],employee:"法定產檢假7日，工資照給。",manager:"依實際產檢需求核給。",proof:"可依規定要求相關證明。",source:"性別平等工作法第15條"},
+{name:"陪產檢及陪產假",icon:"👨‍👩‍👧",tags:["陪產","陪產檢"],employee:"法定7日，工資照給，可依規定以日、半日或小時計。",manager:"依法核給，不應以門市缺人為由拒絕。",proof:"可依規定要求足以證明事由的資料。",source:"性別平等工作法第15條"},
+{name:"家庭照顧假",icon:"🏠",tags:["家庭照顧","小時"],employee:"每年7日，併入事假計算；2026年起可依規定以小時計。",manager:"不得因家庭照顧假影響全勤或作其他不利處分。",proof:"依相關規定辦理。",source:"性別平等工作法第20、21條"},
+{name:"生理假",icon:"🌸",tags:["生理"],employee:"女性受僱者每月得請生理假1日；全年前3日不併入普通傷病假，其餘併入普通傷病假計算。",manager:"依法核給，不得要求不合理的醫療證明。",proof:"依相關規定及個案情況辦理。",source:"性別平等工作法第14條"},
+{name:"公傷病假",icon:"🩹",tags:["職災","公傷"],employee:"因職業災害治療、休養期間，依相關法令辦理。",manager:"先確認是否屬職業災害及相關認定資料。",proof:"依職災相關醫療及認定文件辦理。",source:"勞工請假規則第6條"}
+];
+
+const scenarios=[
+["🤒","員工今天臨時說生病","普通傷病假"],
+["🤰","員工拿安胎診斷證明","安胎休養"],
+["🏖️","員工突然想請特休","特別休假"],
+["📄","病假沒有診斷證明","普通傷病假"],
+["🚫","沒有證明可以直接算曠職嗎？","普通傷病假"]
+];
+
+function render(){
+ document.getElementById("cards").innerHTML=leaves.map((x,i)=>`<div class="card" onclick="show(${i})"><div class="icon">${x.icon}</div><b>${x.name}</b></div>`).join("");
+ document.getElementById("scenarios").innerHTML=scenarios.map(s=>`<div class="answer" onclick="showByName('${s[2]}')" style="cursor:pointer"><b>${s[0]} ${s[1]}</b><br><small>點擊查看處理方式</small></div>`).join("");
+}
+function show(i){
+ const x=leaves[i],r=document.getElementById("result");
+ r.classList.remove("hidden");
+ r.innerHTML=`<button class="small" onclick="back()">← 回首頁</button><h2>${x.icon} ${x.name}</h2>
+ <div>${x.tags.map(t=>`<span class="tag">${t}</span>`).join("")}</div>
+ <h3>👤 員工怎麼做？</h3><div class="answer ok">${x.employee}</div>
+ <h3>🧑‍💼 店長怎麼處理？</h3><div class="answer">${x.manager}</div>
+ <h3>📄 需要證明嗎？</h3><div class="answer warn">${x.proof}</div>
+ <h3>📚 法規依據</h3><p>${x.source}</p>`;
+ window.scrollTo({top:document.getElementById("result").offsetTop-15,behavior:"smooth"});
+}
+function showByName(n){show(leaves.findIndex(x=>x.name===n))}
+function back(){document.getElementById("result").classList.add("hidden");window.scrollTo({top:0,behavior:"smooth"})}
+function search(){
+ const q=document.getElementById("q").value.trim().toLowerCase();
+ if(!q)return;
+ const hits=leaves.filter(x=>(x.name+x.tags.join("")+x.employee+x.manager+x.proof).toLowerCase().includes(q));
+ const r=document.getElementById("result");r.classList.remove("hidden");
+ r.innerHTML=`<button class="small" onclick="back()">← 回首頁</button><h2>🔍 搜尋結果</h2>`+
+ (hits.length?hits.map(x=>`<div class="card" style="margin:8px 0" onclick="show(${leaves.indexOf(x)})">${x.icon} <b>${x.name}</b><small>${x.tags.join("、")}</small></div>`).join(""):"<div class='answer warn'>找不到完全符合的項目。可以試試「病假」、「特休」、「安胎」、「證明」等關鍵字。</div>");
+ window.scrollTo({top:r.offsetTop-15,behavior:"smooth"});
+}
+render();
+</script>
+</body>
+</html>
